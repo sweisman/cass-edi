@@ -1,0 +1,336 @@
+\ Electron Drift Instrument                      23:45 08-20-90
+(
+Source Files
+WELCOME TO EDI CASS TEAM
+
+DRIVERS FOR HIGH VOLTAGE SYSTEM FOR EDI OPTICS
+
+BY   JOE RITTER AND SLOBODAN BEROS
+MODS BY SCOTT WEISMAN
+
+FPID.SCR
+A FLOATING POINT IMPLEMENTATION OF A MODIFIED
+PID ALGORITHM FOR MOTOR CONTROL.  USED TO CONTROL
+ROTATION OF THE MARKIII DETECTOR ABOUT A POLAR AXIS
+
+ )
+\                                                14:50 11-22-90
+
+: SET-ANGLE-OFFSET ( OFFSET --- )
+  NEGATE ANGLE-OFFSET !
+  DISP-VALUES
+;
+
+HEX
+: ANGLE ( --- N ) \ RETURNS ANGLE-512 OF OPTICAL ENCODER
+  8 READ 0FFF AND 2/ 2/  \ READ ENCODER ON P5 CABLE
+                         \ THEN DO 2 ARITH SHIFTS RIGHT
+  200 -           \ CHANGE SCALE (0 TO 1023) TO (-512 TO 511 )
+  ANGLE-OFFSET @ + \ ESTABLISH ZERO ANGLE OFFSET
+;
+
+
+\                                                15:40 08-23-90
+: SET-ZERO
+  CLS
+  BEGIN
+     20 20 GOTOXY ANGLE
+     ." ABSOLUTE ENCODER POSITION = " .
+     ?TERMINAL
+  UNTIL
+;
+
+
+
+
+
+
+
+\                                                14:46 11-22-90
+
+
+
+
+
+DECIMAL
+: PID-START ( --- )
+  0E0 FDUP FDUP FDUP
+  ERROR F! LAST-ERROR F! DELTA-ERROR F! INTEGRAL F!
+\ THIS LAST LINE WILL BE DELETED AND THE VARIABLE SET USING
+\ THE POLAR SEARCH ROUTINE
+;
+
+
+
+\                                                23:50 08-20-90
+
+HEX
+: TERMS! ( KP KI KD --- )
+  KD F! KI F! KP F!
+;
+
+
+
+
+
+
+
+
+
+
+\                                                00:55 09-12-90
+
+
+DECIMAL
+: PID-SETUP ( --- )
+  10E 100E 100E F/ 20E TERMS!
+  800 LIMIT !
+;
+
+
+
+
+
+
+
+
+\                                                17:20 10-03-90
+\ MOTOR OUTPUT CONTROL SCREEN
+
+HEX
+: MOTOR ( N --- )
+  NEGATE 800 + 18C WRITE LATCH
+;
+
+: STOP-MOTOR
+  0 MOTOR
+;
+
+
+
+
+
+\                                                21:34 09-11-90
+
+
+
+DECIMAL
+
+: ZERO-LOOP         \ MONITORS ERROR AND ZEROS OUTPUT IF
+  ERROR F@ F0<>     \ RESETS TIMER
+  IF  18 ZERO ! THEN
+  ZERO @ 0=
+  IF STOP-MOTOR 0E0 INTEGRAL F! THEN
+;
+
+
+
+
+\                                                23:29 12-13-90
+: REAL-ANGLE ( --- F ) \ RETURNS REAL ANGLE, FLOAT FORMAT
+  ANGLE S>F 512E F/ 180E F* 203E F+     \ ADDS 203 OFFSET
+;
+: CHECK-ANGLE ( --- T/F ) \ RETURNS TRUE IF PID NEEDED
+  14 V@ 203E F- 180E F/ 512E F* FROUND F>S ANGLE <>
+  14 V@ F0<> AND \ IF DESIRED<>ACTUAL & DESIRED<>0 THEN TRUE
+;
+: DISP-ANGLE
+  62 29 GOTOXY ." ANGLE=" REAL-ANGLE 8 F.R
+;
+
+
+
+
+
+\                                                01:23 11-29-90
+
+
+DECIMAL
+: THETA  ( --- ) \ CALCS ERROR, LAST-ERROR, DEL-ERROR FROM ANGLE
+  ERROR F@ LAST-ERROR F!
+  14 V@ \ CONVERT TO ENCODER POS.
+  REAL-ANGLE F- FDUP FABS 360E 2048E F/ F< IF
+    FDROP 0E THEN \ IF ERROR<360/(1024*2) THEN ERROR=0
+  FDUP ERROR F!
+  LAST-ERROR F@ F- DELTA-ERROR F!
+;
+
+
+
+
+\                                                23:52 08-20-90
+
+
+
+
+: PID-LOOP ( --- )
+  1 TICK !
+  BEGIN
+    TICK @ 0=
+  UNTIL
+  THETA
+;
+
+
+
+
+\                                                23:53 08-20-90
+
+
+DECIMAL
+: PROP-TERM ( --- PROPORTIONAL TERM )
+  ERROR F@ KP F@ F*
+;
+
+
+
+
+
+
+
+
+
+\                                                23:54 08-20-90
+DECIMAL
+
+
+: DERIVATE ( --- DERIVATIVE TERM )
+  DELTA-ERROR F@ KD F@ F*
+  FDUP DERIVATIVE F!
+;
+
+
+
+
+
+
+
+
+\                                                23:54 08-20-90
+DECIMAL
+: INTEGRATE ( --- INTEGRAL TERM )
+
+  ERROR F@ FDUP FABS 10E0 F< ERROR F@ F0<> AND
+  IF
+      KI F@ F* INTEGRAL F@ F+ INTEGRAL F!
+  ELSE
+      FDROP 0E0 INTEGRAL F!
+  THEN
+  INTEGRAL F@
+;
+
+
+
+
+\                                                23:55 08-20-90
+DECIMAL
+: SUM ( --- OUT )
+  PROP-TERM INTEGRATE DERIVATE F+ F+
+;
+
+: LIMITER ( OUT --- OUT' )
+  LIMIT @ MIN
+  LIMIT @ NEGATE MAX
+;
+
+
+
+
+
+
+\                                                00:18 11-29-90
+: AUTO-PID
+  PID-SETUP
+  PID-START
+;
+
+
+
+
+
+
+
+
+
+
+
+\                                                00:28 11-29-90
+: PID ( --- )
+   ANGLE -512 <> ANGLE 511 <> AND IF
+     CHECK-ANGLE IF
+       AUTO-PID
+       BEGIN
+        PID-LOOP
+        SUM F>S LIMITER MOTOR
+        DISP-ANGLE
+        ZERO-LOOP ZERO @ 0=
+      UNTIL
+      STOP-MOTOR
+    THEN
+  THEN
+;
+
+\                                                01:07 09-12-90
+
+
+: SEEK ( EXPECTED --- )  S>F 14 V! AUTO-PID
+   BEGIN
+    PID-LOOP
+    SUM F>S LIMITER
+    MOTOR 10 10 GOTOXY ." ANGLE: " ANGLE .
+    ZERO-LOOP
+    ZERO @ 0=
+  UNTIL
+  L ANGLE ." EXIT ANGLE IS " . L STOP-MOTOR ;
+
+
+
+
+\                                                05:19 09-12-90
+
+
+: SEEK2 ( EXPECTED --- )  S>F 14 V! AUTO-PID
+   BEGIN
+    PID-LOOP
+    SUM F>S LIMITER
+    MOTOR \ 10 10 GOTOXY ." ANGLE: " ANGLE .
+    ZERO-LOOP
+    ZERO @ 0=
+  UNTIL
+  \    L ANGLE ." EXIT ANGLE IS " . L
+  STOP-MOTOR ;
+
+
+
+\                                                20:24 10-08-90
+: PID-TOGGLE
+  PID-ACTIVE? @ NOT PID-ACTIVE? !
+  DISP-VALUES
+;
+
+
+
+
+
+
+
+
+
+
+
+\                                                14:19 12-14-90
+: DISP-REAL-ANGLE-TEST
+  CLS
+  BEGIN
+    REAL-ANGLE F. CR
+    ?TERMINAL
+  UNTIL
+;
+
+
+
+
+
+
+
+

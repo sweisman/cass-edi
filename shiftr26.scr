@@ -1,0 +1,128 @@
+\                                                09:51 12-28-90
+( THIS FILE CONTAINS BEAM SHIFTING ROUTINES
+
+
+BY JOR RITTER, SCOTT WEISMAN, CARL MCILWAIN
+
+
+SHIFTR23.SCR
+
+
+
+
+
+
+)
+
+\                                                15:00 12-12-90
+HEX
+    : WX ( VALUE --- ) 028C WRITE XYLATCH ; \ WRITES X TO SHIFT
+    : WY ( VALUE --- ) 028E WRITE XYLATCH ; \ WRITES Y TO SHIFT
+       : ZXY ( --- )   800 DUP WX WY ;    \ ZEROS X&Y SHIFTERS
+
+
+
+
+
+
+
+
+
+
+
+\                                                17:14 12-13-90
+HEX
+: BX ( TAKES FWX VALUE DIVIDES BY 12 THEN LATCHES TO
+       GUN CURRENT CHANNEL = 018A HEX )
+     ( I --- )
+        018A WRITE LATCH
+;
+
+
+
+
+
+
+
+
+
+\                                                17:14 12-13-90
+HEX
+: BY ( TAKES FWY VALUE DIVIDES BY 12 THEN LATCHES TO
+              FREE CHANNEL = 028A HEX )
+     ( I --- )
+        028A WRITE  LATCH
+;
+
+
+
+
+
+
+
+
+
+\         CURRENT UP TO NOV29                    14:39 12-12-90
+ DECIMAL
+\ : IWX ( INVERSE VOLTAGE BEAM SHIFTING )
+\      ( 2048 TO 3900 ---  OUTPUT      USING 1/X )
+\        DUP BX   \ LATCH INDEX TO DAC
+\        \ Idac=2048+(655360/(INDEX-1700))
+\        1700 - 655360 SWAP / 2048 + WX
+\ ;
+\ : IWY ( INVERSE VOLTAGE BEAM SHIFTING )
+\      ( 2048 TO 3900 ---  OUTPUT      USING 1/X )
+\        DUP BY   \ LATCH INDEX TO DAC
+\        \ Idac=2048+(655360/(INDEX-1700))
+\        1700 - 655360 SWAP / 2048 + WY
+\ ;
+
+
+\         CURRENT                                18:17 12-12-90
+ DECIMAL
+ : IWX ( INVERSE VOLTAGE BEAM SHIFTING )
+      ( 2048 TO 3900 ---  OUTPUT      USING 1/X )
+        DUP BX   \ LATCH INDEX TO DAC
+        1800 - 453710 SWAP / 2187 + WX
+ ;
+ : IWY ( INVERSE VOLTAGE BEAM SHIFTING )
+      ( 2048 TO 3900 ---  OUTPUT      USING 1/X )
+        DUP BY   \ LATCH INDEX TO DAC
+        1700 - 655360 SWAP / 2048 + WY
+ ;
+
+
+
+
+\        CURRENT                                 18:16 12-12-90
+DECIMAL
+
+ : IWY-NODISPLAY ( INVERSE VOLTAGE BEAM SHIFTING )
+      ( 2048 TO 3900 ---  OUTPUT      USING 1/X )
+    (    DUP BY )  \ DONT LATCH INDEX TO DAC
+        1700 - 655360 SWAP / 2048 + WY
+ ;
+
+
+
+
+
+
+
+
+\                                                14:35 12-12-90
+DECIMAL
+VARIABLE XPOS   \ STORE X POSITION FOR COMPENSATION
+FVARIABLE COMP   \ USED FOR Y'=Y+COMP*X
+-.28E0 COMP F!
+VARIABLE COMP-OFFSET
+ 000 COMP-OFFSET !
+: CWX ( COMPENSATED SHIFT FOR ORTHOG RASTER ) ( X --- )
+  DUP XPOS ! IWX
+;
+: CWY ( COMPENSATED SHIFT FOR ORTHOG RASTER ) ( Y --- )
+  DUP BY
+  XPOS @       S>F COMP F@ F* F>S +
+         COMP-OFFSET @ -
+         DUP 2000 < IF DROP 2000 THEN IWY-NODISPLAY
+;

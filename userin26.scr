@@ -1,0 +1,176 @@
+\ Electron Drift Instrument                      17:17 12-13-90
+(
+Source Files
+FOR THE USER INTERFACE
+
+MULTITASKING SYSTEM FOR HIGH VOLTAGE CONTROL FOR EDI OPTICS
+
+BY   JOE RITTER, SLOBODAN BEROS, SCOTT WEISMAN
+
+
+USER23.SCR
+
+
+
+
+ )
+\                                                15:47 10-08-90
+: BEAM-ADJUST-LOW ( 'I,J/'i,j/^I,^J --- VAL )
+  DUP 96 AND 0= IF
+    DROP -1                     \ CONTROL
+    ELSE DUP 96 AND 64 = IF
+      DROP -10                  \ NORMAL
+      ELSE DUP 96 AND 96 = IF
+        DROP -1                 \ SHIFT
+      THEN
+    THEN
+  THEN
+;
+
+
+
+
+\                                                15:48 10-08-90
+: BEAM-ADJUST-HI ( 'I,J/'i,j/^I,^J --- VAL )
+  DUP 96 AND 0= IF
+    DROP 1                      \ CONTROL
+    ELSE DUP 96 AND 64 = IF
+      DROP 10                   \ NORMAL
+      ELSE DUP 96 AND 96 = IF
+        DROP 1                  \ SHIFT
+      THEN
+    THEN
+  THEN
+;
+
+
+
+
+\                                                20:52 11-13-90
+: X-ADJUST ( VAL --- )
+  XX +! XX @ 2000 < IF 2000 XX ! THEN
+        XX @ 9999 > IF 9999 XX ! THEN
+;
+
+
+: Y-ADJUST ( VAL --- )
+  YY +! YY @ 2000 < IF 2000 YY ! THEN
+        YY @ 9999 > IF 9999 YY ! THEN
+;
+
+
+
+
+
+\                                                16:30 11-21-90
+: SHIFTER-OLD \ SHIFT BEAM SHIFTER MANUALLY | KEY ---
+  DUP 31 AND  9 = IF BEAM-ADJUST-HI Y-ADJUST ELSE
+    DUP 31 AND 10 = IF BEAM-ADJUST-LOW X-ADJUST ELSE
+      DUP 31 AND 11 = IF BEAM-ADJUST-HI X-ADJUST ELSE
+        DUP 31 AND 13 = IF BEAM-ADJUST-LOW Y-ADJUST
+        THEN
+      THEN
+    THEN
+  THEN
+  CLRSTK
+  DISP-VALUES
+  XX @ IWX YY @ IWY
+;
+
+
+\                                                22:23 12-03-90
+: WX SHIFT-COMP @ IF CWX ELSE IWX THEN ;
+: WY SHIFT-COMP @ IF CWY ELSE IWY THEN ;
+: SHIFT-TOGGLE
+  SHIFT-COMP @ NOT SHIFT-COMP !
+;
+
+
+
+
+
+
+
+
+
+
+\                                                22:19 12-03-90
+: SHIFTER \ SHIFT BEAM SHIFTER MANUALLY | KEY ---
+  DUP 31 AND 13  = IF BEAM-ADJUST-HI Y-ADJUST ELSE
+    DUP 31 AND 10 = IF BEAM-ADJUST-LOW X-ADJUST ELSE
+      DUP 31 AND 11 = IF BEAM-ADJUST-HI X-ADJUST ELSE
+        DUP 31 AND  9 = IF BEAM-ADJUST-LOW Y-ADJUST
+        THEN
+      THEN
+    THEN
+  THEN
+  CLRSTK
+  DISP-VALUES
+  XX @ WX YY @ WY
+;
+
+
+\                                                10:05 12-28-90
+DECIMAL
+: CHKKEY-OLD ( N --- 0-F HEX OR G-Z ASCII )
+  DUP 13  = IF DROP 32 0 ELSE  \ IF CR THEN GOOD,BUT MAKE SPACE
+  DUP 47 <= IF DROP -1 ELSE  \ IF < '0' THEN ERROR
+  DUP 57 <= IF 48 -  0 ELSE  \ IF '0'-'9' THEN CONVERT
+  DUP 64 <= IF DROP -1 ELSE  \ IF BET '0' & 'A' THEN ERROR
+  DUP 70 <= IF 55 -  0 ELSE  \ IF 'A'-'F' THEN CONVERT
+  DUP 91 >= IF DROP -1 ELSE  \ IF > 'Z' THEN ERROR
+  0                          \ ELSE BET 'G' & 'Z'
+  THEN THEN THEN THEN THEN   \ 0 IS FLAG FOR VALID INPUT
+  THEN ;
+
+
+
+
+\                                                14:24 10-08-90
+DECIMAL
+: CHKKEY ( N --- 0-F HEX OR G-Z ASCII )
+  DUP 13  = IF DROP 32 0 ELSE  \ IF CR THEN GOOD,BUT MAKE SPACE
+  DUP 47 <= IF       0 ELSE  \ IF <'0' THEN LEAVE ALONE
+  DUP 57 <= IF 48 -  0 ELSE  \ IF '0'-'9' THEN CONVERT
+  DUP 64 <= IF DROP -1 ELSE  \ IF BET '0' & 'A' THEN ERROR
+  DUP 70 <= IF 55 -  0 ELSE  \ IF 'A'-'F' THEN CONVERT
+  0                          \ ELSE BET 'G' & 'Z'
+  THEN THEN THEN THEN THEN   \ 0 IS FLAG FOR VALID INPUT
+;
+
+
+
+
+
+\                                                14:24 10-08-90
+DECIMAL
+: INKEY ( --- KEY 0/-1 )
+  ?TERMINAL                  \ CHECK FOR KEYPRESS
+  IF
+    KEY CHKKEY               \ CHECK IF VALID RANGE
+    IF 7 EMIT 0              \ CHECK FOR VALID IN
+    ELSE -1 THEN
+  ELSE
+    0                        \ MARK AS NO KEYPRESS
+  THEN
+;
+
+
+
+
+\                                                16:10 01-21-91
+: INPUT-DATA INKEY IF ( MENU SELECTION ROUTINE )
+    DUP  1 >= IF DUP 14 <= IF TRODE-SELECT EXIT THEN THEN
+    DUP 32  = IF ENTER-VALUE       THEN \ CHANGE VALUE
+    DUP 72  = IF ANU-CONTROL ( )  THEN  \ HISTOGRAMS ETC.
+    DUP 80  = IF CCP-CONTROL (  )  THEN \ CCP CONTROL
+    DUP 82  = IF R ( RIGHT-MENU )  THEN \ RASTER CONTROL
+    DUP 83 = IF SV THEN    DUP 76 = IF LD THEN \ LOAD&SAVE CASES
+    DUP 71  = IF SHIFT-TOGGLE      THEN \ TOGGLE COMP/UNCOMP
+    DUP 84  = IF PID-TOGGLE        THEN \ TURN PID ON/OFF
+    DUP 88  = IF AUTO-ACCUM-PRINT  THEN \ DO OPERATION
+    DUP 79  = IF AUTO-CONTROL1       THEN \ AUTO MENU 1
+    DUP 85  = IF AUTO-CONTROL2      THEN \ SEARCHES
+    DUP 31 AND 17 = IF TRODE-ADJUST-LOW THEN \ ^Q, 'Q, 'q
+    DUP 31 AND 23 = IF TRODE-ADJUST-HI THEN \ ^W, 'W, 'w
+    SHIFTER THEN RASTER ;

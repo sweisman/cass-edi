@@ -1,0 +1,400 @@
+\ Electron Drift Instrument                      17:13 12-13-90
+(
+Source Files
+WELCOME TO EDI CASS TEAM
+
+DRIVERS FOR HIGH VOLTAGE SYSTEM FOR EDI OPTICS
+
+BY   JOE RITTER, SLOBODAN BEROS, AND SCOTT WEISMAN
+
+
+RASTER23.SCR
+        RASTER CONTROL
+ INCLUDES COMPENSATION: Y'=Y+C*X
+ )
+
+
+\                                                15:36 10-03-90
+: FWX ( INTEGER --- ) \ INPUT 25641 TO 48828= 3900 TO 2048 SHIFT
+    S>F 1E-8 F*
+    1E0 FSWAP F/
+    F>S
+    WX
+;
+: FWY ( INTEGER --- ) \ INPUT 25641 TO 48828= 3900 TO 2048 SHIFT
+    S>F 1E-8 F*
+    1E0 FSWAP F/
+    F>S
+    WY
+;
+( THESE ROUTINES HAVE BEEN ADDED BECAUSE OF THE 1/VOLTAGE
+  CHARACTERISTIC OF THE BEAM SHIFTER'S SHIFT )
+
+\                                                15:42 01-16-91
+DECIMAL
+5 DX !           \ X STEP FOR RASTERING
+5 DY !           \ Y STEP FOR RASTERING
+
+\ DX @ DY @ * DA !  \ AREA INCREMENT FOR CENTROIDING ETC...
+
+
+: CHANGE-DX ( --- )
+  62 29 GOTOXY ." NEW DX VALUE: " #IN DX !
+  62 29 GOTOXY 16 SPACES ;
+: CHANGE-DY ( --- )
+  62 29 GOTOXY ." NEW DY VALUE: " #IN DY !
+  62 29 GOTOXY 16 SPACES ;
+
+
+\                                                15:42 01-16-91
+
+: CHANGE-RASTER-DELAY ( --- )
+  55 29 GOTOXY ." NEW DELAY VALUE: " #IN RASTER-DELAY !
+  55 29 GOTOXY 24 SPACES ;
+
+
+
+
+
+
+
+
+
+
+
+\                                                16:52 09-11-90
+HEX
+    : SCALEX ( X --- X' ) \ SCALES X TO RANGE OF 0-480
+800 - 4/ ;                \ (X-2048)/4
+    : SCALEY ( Y --- Y' ) \ SCALES Y TO RANGE OF 0-480
+800 - 4/ ;                \ (Y-2048)/4
+
+
+
+
+
+
+
+
+
+
+\                                                15:43 01-16-91
+HEX
+
+: CP-REG-READ ( --- CPVALUE REGISTER )
+  A READ      \ READS CHANNEL PLATE HIT REGISTER ON P6 CABLE
+;
+: .IJ L ." I J = " I . J . ;
+
+: CP-REG-READ
+  A READ 4 AND \ SELECTS CHANNEL 2 ONLY
+;
+
+
+
+
+
+\                                                17:57 09-11-90
+DECIMAL
+: MIN-CROSS ( --- )
+  WXMIN @ WYMIN @ OVER WYMAX @ LINE
+  WXMIN @ WYMIN @ WXMAX @ OVER LINE
+;
+: MAX-CROSS ( --- )
+  WXMAX @ WYMAX @ OVER WYMIN @ LINE
+  WXMAX @ WYMAX @ WXMIN @ OVER LINE
+;
+: UNSCALE ( N --- N') 4* 2048 + ;   \ CONVERTS TO RAW VALS
+: UNSCALE-ALL ( --- ) \ CONVERTS WINDOW VALS BACK TO RAW VALS
+  WXMIN @ UNSCALE XMIN !
+  WYMIN @ UNSCALE YMIN !
+  WXMAX @ UNSCALE XMAX !
+  WYMAX @ UNSCALE YMAX ! ;
+\                                                20:53 09-25-90
+DECIMAL
+       : BOX  ( --- ) \ DRAWS A BOX AROUND SCAN WINDOW
+  WXMIN @ WYMIN @ WXMAX @ OVER LINE
+  WXMAX @ WYMIN @ OVER WYMAX @ LINE
+  WXMAX @ WYMAX @ WXMIN @ OVER LINE
+  WXMIN @ WYMAX @ OVER WYMIN @ LINE
+;
+: CROSS ( --- ) \ PRINTS CROSSHAIR AT CENTROIDS
+  15 FOREGROUND
+  X @ 10 - Y @ X @ 10 + Y @ LINE
+  X @ Y @ 10 - X @ Y @ 10 + LINE
+\ COLOR 1- @ FOREGROUND
+
+;
+
+\                                                14:13 12-05-90
+DECIMAL
+: MN ( KEY --- )
+  0 FOREGROUND BOX COLOR @ 1- FOREGROUND \ BLANK OLD BOX
+  DUP 73 = IF -4 WYMIN +! THEN
+  DUP 77 = IF  4 WYMIN +! THEN
+  DUP 74 = IF -4 WXMIN +! THEN
+      75 = IF  4 WXMIN +! THEN
+  WYMIN @ MINVAL <  IF MINVAL WYMIN ! THEN
+  WXMIN @ MINVAL <  IF MINVAL WXMIN ! THEN
+  WYMIN @ WYMAX @ >= IF WYMAX @ 2- WYMIN ! THEN
+  WXMIN @ WXMAX @ >= IF WXMAX @ 2- WXMIN ! THEN
+  BOX                              \ PUT BOX AT NEW LOCATION
+  WXMIN @ UNSCALE 5 75 24 GOTOXY .R
+  WYMIN @ UNSCALE 5 75 25 GOTOXY .R  UNSCALE-ALL
+;
+\                                                14:13 12-05-90
+DECIMAL
+: MX ( KEY --- )
+  0 FOREGROUND BOX COLOR @ 1- FOREGROUND \ BLANK OLD BOX
+  DUP 73 = IF -4 WYMAX +! THEN
+  DUP 77 = IF  4 WYMAX +! THEN
+  DUP 74 = IF -4 WXMAX +! THEN
+      75 = IF  4 WXMAX +! THEN
+  WYMAX @ MAXVAL >  IF MAXVAL WYMAX ! THEN
+  WXMAX @ MAXVAL >  IF MAXVAL WXMAX ! THEN
+  WYMAX @ WYMIN @ <= IF WYMIN @ 2+ WYMAX ! THEN
+  WXMAX @ WXMIN @ <= IF WXMIN @ 2+ WXMAX ! THEN
+  BOX                              \ PUT BOX AT NEW LOCATION
+  WXMAX @ UNSCALE 5 75 26 GOTOXY .R
+  WYMAX @ UNSCALE 5 75 27 GOTOXY .R  UNSCALE-ALL
+;
+\                                                21:48 09-12-90
+DECIMAL
+    : GET-NEXT-COLOR ( --- )
+  COLOR @ DUP DUP 16 =           \ IF COLOR=0 OR 1 (BLK OR BLU)
+  IF 2DROP 2 2 THEN              \ THEN GOTO NEXT (GREEN)
+  FOREGROUND 1+ COLOR !
+;
+
+
+
+
+
+
+
+
+
+\                                                22:48 10-03-90
+: BSTRANSFORM ( IN INTEGER 2048 TO 3900
+                OUT INTEGER 48828 TO 25641 )
+   \ OUT= 1/IN TIMES 1E8
+    S>F 1E0 FSWAP F/ 1E8 F* F>S
+;
+: BSTRANSFORM2 ( IN INTEGER 2048 TO 3900
+                OUT INTEGER 48828/12 TO 25641/12 )
+   \ OUT= 1/IN TIMES 1E8 / 12
+    S>F 1E0 FSWAP F/ 1E8 F* 12E0 F/ F>S
+;
+
+
+
+
+
+\ TRANSFORM-BEAM-SHIFTER-LIMITS                  14:15 10-03-90
+: TRANSFORM-BEAM-SHIFTER-LIMITS ( --- )
+XMAX @ BSTRANSFORM FXMAX !
+XMIN @ BSTRANSFORM FXMIN !
+YMAX @ BSTRANSFORM FYMAX !
+YMIN @ BSTRANSFORM FYMIN !
+DX @ -23 * FDX !
+DY @ -23 * FDY !
+;
+
+
+
+
+
+
+
+\                                                12:22 12-07-90
+DECIMAL    \ THIS IS THE MAIN RASTER ROUTINE
+: RASTER   \ DOES ZIG ZAG RASTER WITHOUT ACCUMULATION
+RASTER-ON @ IF 62 29 GOTOXY ." RASTERING...."
+ DY @ -1 * NEGDY ! DX @ 2 * 2DX !
+ XMAX @ 1+  XMIN @ DO
+    I CWX  I DX @ + IDX !   \ COMPENSATED X WITH 1/X SHIFT
+    YMAX @ 1+  YMIN @ DO
+       I CWY  RASTER-DELAY @ -1 DO ( NOTHING ) LOOP \ COMPENSATE
+    DY @ +LOOP
+    IDX @ CWX  \ STEP OVER IN X
+    YMIN @ YMAX @  DO
+       I CWY  RASTER-DELAY @ -1 DO ( NOTHING ) LOOP \ COMPENSATE
+    NEGDY @ +LOOP
+ 2DX @ +LOOP ZXY
+62 29 GOTOXY ." DONE        " THEN ;
+\                                                21:07 11-12-90
+: YLINE
+  YMEAN @ IWY
+  XMAX @ 1+  XMIN @ DO
+     I IWX
+     RASTER-DELAY @ -1 DO ( NOTHING ) LOOP
+  DX @ +LOOP
+;
+
+
+
+
+
+
+
+
+\                                                21:07 11-12-90
+: XLINE
+  XMEAN @ IWX
+  YMAX @ 1+  YMIN @ DO
+     I IWY
+     RASTER-DELAY @ -1 DO ( NOTHING ) LOOP
+  DY @ +LOOP
+;
+
+
+
+
+
+
+
+
+\                                                22:29 12-03-90
+DECIMAL
+: CROSS-RASTER   \ DOES RASTER WITHOUT ACCUMULATION
+61 28 GOTOXY ." CROSS RASTERING......"
+XMAX @ XMIN @ + 2/ XMEAN !
+YMAX @ YMIN @ + 2/ YMEAN !
+BEGIN
+     XLINE
+     YLINE
+     ?TERMINAL
+UNTIL KEY DROP
+61 28 GOTOXY ." DONE               "
+;
+
+
+
+\                                                22:29 12-03-90
+DECIMAL
+: NTRASTER   \ DOES RASTER WITHOUT ACCUMULATION
+ \ NO TOGGLE SWITCH
+
+62 29 GOTOXY ." RASTERING......"
+XMAX @ 1+ XMIN @ DO
+   I WX
+   YMAX @ 1+ YMIN @ DO
+      I WY
+   DY @ +LOOP
+DX @ +LOOP
+ZXY
+62 29 GOTOXY ." DONE         "
+
+;
+\                                                08:22 09-28-90
+
+
+
+       : NEXT
+  GET-NEXT-COLOR
+  RASTER
+;
+       : NEXT2
+  GET-NEXT-COLOR
+\ RASTER2
+;
+
+
+
+
+\                                                17:04 11-20-90
+: RASTER-VALS ( --- ) \ DISPLAYS RASTER VALS IN CORNER
+  75 21 GOTOXY RASTER-DELAY @ 5 .R                 \ DISPLAY D
+  75 22 GOTOXY DX @ 5 .R                 \ DISPLAY DX
+  75 23 GOTOXY DY @ 5 .R                 \ DISPLAY DY
+  75 24 GOTOXY XMIN @ 5 .R
+  75 25 GOTOXY YMIN @ 5 .R
+  75 26 GOTOXY XMAX @ 5 .R
+  75 27 GOTOXY YMAX @ 5 .R
+  REVERSE
+  77 18 GOTOXY MIN-MAX @ IF ." MAX" ELSE ." MIN" THEN
+  77 19 GOTOXY RASTER-ON @ IF ."  ON" ELSE ." OFF" THEN
+  REVERSE
+;
+
+
+\                                                17:00 11-20-90
+: RASTER-MENU ( --- ) \ DISPLAYS RASTER MENU IN CORNER
+60 18 GOTOXY ."  SPACE Toggle"
+60 19 GOTOXY ."  <CR> Toggle raster"
+60 20 GOTOXY ."  C Cross raster "
+60 21 GOTOXY ."  D Raster delay "
+60 22 GOTOXY ."  X Raster DX    "
+60 23 GOTOXY ."  Y Raster DY    "
+60 24 GOTOXY ."  XMIN:          "
+60 25 GOTOXY ."  YMIN:          "
+60 26 GOTOXY ."  XMAX:          "
+60 27 GOTOXY ."  YMAX:          "
+;
+
+
+
+\                                                17:02 11-20-90
+
+: DO-RASTER ( --- )
+  UNSCALE-ALL BOX NEXT  \ DISP-RASTER
+\ CENTROID DISP-CENTROID
+  62 29 GOTOXY        ." FINISHED..."
+;
+
+: RASTER-TOGGLE
+  RASTER-ON @ NOT    RASTER-ON !
+  RASTER-VALS
+;
+: MIN-MAX-TOGGLE
+  MIN-MAX @ NOT MIN-MAX !
+  RASTER-VALS
+;
+\                                                17:01 11-20-90
+DECIMAL
+: RASTER-INPUT ( --- ) \ SETS WINDOW BOUNDARIES
+  BOX
+  BEGIN
+    BEGIN ?TERMINAL UNTIL KEY
+    DUP 67 = IF CROSS-RASTER        RASTER-VALS THEN \ CH DELAY
+    DUP 68 = IF CHANGE-RASTER-DELAY RASTER-VALS THEN \ CH DELAY
+    DUP 88 = IF CHANGE-DX RASTER-VALS       THEN  \ 'X
+    DUP 89 = IF CHANGE-DY RASTER-VALS       THEN  \ 'Y
+    DUP 32 = IF MIN-MAX-TOGGLE               THEN \ TOGGLE
+    DUP 13 = IF UNSCALE-ALL RASTER-TOGGLE     THEN \ START RASTE
+    DUP 90 = IF DROP EXIT                    THEN \
+    MIN-MAX @ IF MX ELSE MN THEN
+  AGAIN
+;
+\                                                02:13 10-16-90
+DECIMAL
+: R
+  CLS RASTER-MENU RASTER-VALS RASTER-INPUT
+  CLS MENU TRODE-UPDATE-ALL
+;
+: CONT-RASTER
+   RASTER-MENU RASTER-VALS RASTER-INPUT BOX
+   BEGIN
+        NEXT \ DISP-RASTER
+   AGAIN
+;
+
+
+
+
+\                                                01:24 09-12-90
+: RR CLS 7 EMIT
+  4095 2048 DO
+       4095 2048 DO  I J WX WY
+                     I 2048 - 4 /
+                     J 2048 - 4 /  !PEL
+  10 +LOOP
+  10 +LOOP
+;
+: RRR BEGIN  RR ?TERMINAL UNTIL KEY DROP ;
+
+
+
+
+
+

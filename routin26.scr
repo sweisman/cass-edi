@@ -1,0 +1,336 @@
+\ Electron Drift Instrument                      17:15 12-13-90
+(
+Source Files
+FOR THE USER INTERFACE
+
+MULTITASKING SYSTEM FOR HIGH VOLTAGE CONTROL FOR EDI OPTICS
+
+BY   JOE RITTER AND SLOBODAN BEROS
+MODS BY SCOTT WEISMAN
+
+ROUTIN23.SCR
+
+
+
+
+ )
+\ #IN   not using NUMBER?                        15:34 01-07-91
+( assumes floating point not loaded )
+DECIMAL
+: #IN ( -- n )                  \ ALLOWS INPUT OF NEGATIVE #'S
+   0  1 >R                      \ return stack = sign of number
+   BEGIN KEY DUP 13 <>                        \ do until return
+   WHILE DUP 45 =                                  \ minus sign
+         IF   EMIT R> NEGATE >R
+         ELSE DUP  8 =
+              IF   EMIT 32 EMIT 8 EMIT 10 /         \ backspace
+              ELSE DUP BASE @ DIGIT>                    \ digit
+                   IF   SWAP EMIT  SWAP 10 * +     \ good digit
+                   ELSE DROP 7 EMIT                 \ bad digit
+         THEN THEN THEN
+   REPEAT DROP  R> * ;           \ discard last key, apply sign
+
+\                                                15:35 01-07-91
+: F#IN ( -- f )                            \ floating point #IN
+   PAD 40 BLANK  PAD 1+ 40 EXPECT            \ get input string
+   SPAN @ PAD C!                          \ make counted string
+   PAD FNUMBER?                  \ leave double number on stack
+   0=  IF 7 EMIT THEN ;                     \ beep if bad input
+
+
+
+
+
+
+
+
+
+
+\                                                15:37 01-07-91
+HEX
+    : READ ( OFFSET -- WORD ) BOARD-BASE ROT >PTR @L FFFF AND ;
+    : CREAD  ( OFFSET -- BYTE ) BOARD-BASE ROT >PTR C@L ;
+    : WRITE  ( WORD OFFSET -- ) BOARD-BASE ROT >PTR W!L ;
+    : CWRITE ( BYTE OFFSET -- ) BOARD-BASE ROT >PTR C!L ;
+
+    : LATCH ( --- ) ( LATCH DATA TO DAC )
+  0 100 CWRITE   ( MODULE 1 )
+  0 200 CWRITE ; ( MODULE 2 )
+    : XYLATCH ( --- ) ( LATCH DATA TO DAC )
+  0 200 CWRITE ; ( MODULE 2 )
+\ READ AND WRITE ABOVE ARE FOR I/O TO BURR-BROWN BOARD, WHICH
+\ CTRLS MOST OF LAB SETUP. 'C' PREFIX MEANS CHAR(OR BYTE) I/O
+\ AND NO PREFIX MEANS 16 BIT I/O
+\ XYLATCH IS USED FOR BEAM SHIFTERS BECAUSE IT'S FASTER
+\                                                19:59 10-06-90
+HEX
+: >> ( N #ASRS --- N'  PERFORMS N ARITHMETIC SHIFTS TO RIGHT )
+  DUP 0<> IF
+             0 DO 2/ LOOP
+          ELSE
+             DROP
+          THEN
+;
+: << ( N #ASRS --- N'  PERFORMS N ARITHMETIC SHIFTS TO LEFT  )
+  DUP 0<> IF
+             0 DO 2* LOOP
+          ELSE
+             DROP
+          THEN
+;
+\                                                17:41 09-12-90
+HEX
+    : CONFIG-I/O ( --- ) \ SETS 32 LINES AS INPUT
+  8F 0 CWRITE            \ AND LATCHES INTERUPT STATUS
+;
+    : L
+  A EMIT D EMIT \ CR/LF TO SCREEN
+;
+: CM ( --- ) \ CLEARS NON-MENU PORTION OF SCREEN
+  30 0 DO
+    0 I GOTOXY 60 SPACES
+  LOOP
+;
+
+
+
+\                                                15:38 01-07-91
+: STOP-PROG
+  CLS
+  ." PROGRAM TERMINATED "
+  .TIME
+  BYE ( EXIT TO DOS )
+;
+\ THIS ROUTINE IS NOT USED IN CURRENT VERSION
+
+
+
+
+
+
+
+
+\                                                15:40 01-07-91
+DECIMAL
+: XLT ( CH --- CH' )
+  XLAT + C@ ;
+\ XLT IS THE LOOKUP FUNCTION USING XLAT ARRAY.  IT IS USED TO
+\ TRANSLATE BET. INTERNAL AND EXTERNAL ORDERING FOR V,S ARRAYS
+
+: S! ( VAL CH --- ) FPSIZE * S[] + F! ; \ SCALE ARRAY ACCESS
+: S@ ( CH --- VAL ) FPSIZE * S[] + F@ ;
+
+: O! ( VAL CH --- ) 2* O[] + W! ; \ OUTPUT ARRAY ACCESS
+: O@ ( CH --- VAL ) 2* O[] + W@ ;
+
+: OFFSET! ( VAL CH --- ) FPSIZE * OFFSET[] + F! ; \ OFFSET
+: OFFSET@ ( CH --- VAL ) FPSIZE * OFFSET[] + F@ ; \ ARRAY
+
+\                                                15:42 01-07-91
+DECIMAL
+
+: V! ( VAL CH --- ) \ V! XLATES THE INTERNAL CH TO THE
+                    \ EXTERNAL CH TO SAVE VAL IN CORRECT LOC
+  DUP 14 <> IF TRUE TRODE-CHANGE ! THEN
+   XLT FPSIZE * V[] + F! ;
+
+: V@ ( CH --- XLATE-VAL  )  \ RETURNS XLATED CHANNEL
+  XLT FPSIZE * V[] + F@       \ RETURNS XLATED CHANNEL VAL
+;
+: VOUT@ ( CH --- RAW-VAL )     FPSIZE * V[] + F@ ;
+\ VOUT RETURNS UNXLATED VAL, CALLED ONLY FOR OUTPUT
+
+
+
+\                                                15:43 01-07-91
+DECIMAL   ( FORMERLY S4 )
+: SCALE1 ( SET DEFAULT VALUES FOR SCALING AND CALIBRATION )
+  \ SCALE VALS ARE DIV BY 2 TO REFLECT DIFFERENT AMP GAIN
+ 552E0          ( RETAINER-CONE   )        1 S!
+ 457E0          ( SENSOR          )        2 S!
+ 492E0          ( EXTRACTOR       )        3 S!
+ 461E0          ( SUPPRESSOR      )        4 S!
+ 508E0          ( GUN-ENERGY      )        5 S!
+ 480E0          ( GUN-FOCUS       )        6 S!
+ 504.5E0        ( MOTOR OUT       )        7 S!
+ 474E0          ( OUTER-ANALYZER  )        8 S!
+;
+\ OUTPUT=VAL/SCALE+OFFSET
+\ DATA=(((VOLT+5)*4096)/10) * .9519544
+( 1228 * .9519544 = 1169 )
+\                                                17:49 10-27-90
+DECIMAL
+: SCALE2
+ 945E0          ( UPPER-INJECTOR  )        9 S!
+ 956E0          ( LOWER-INJECTOR  )       10 S!
+ 952E0          ( UPPER-DEFLECTOR )       11 S!
+ 940E0          ( LOWER-DEFLECTOR )       12 S!
+ 956E0          ( INNER-ANALYZER  )       13 S!
+ 937E0          ( FREE            )       14 S!
+\ -930E0        ( VEBS-X          )       15 S!
+\ -930E0        ( VEBS-Y          )       16 S!
+;
+
+
+
+
+\         ( FORMERLY S10 )                       18:12 12-17-90
+: SETDEF ( SET DEFAULT VALUES FOR ELECTRODES )
+ 0000E0  ( UPPER-DEFLECTOR )       1 V!
+ 0000E0  ( LOWER-DEFLECTOR )       2 V!
+ 0000E0  ( UPPER-INJECTOR  )       3 V!
+ 0000E0  ( LOWER-INJECTOR  )       4 V!
+ 0000E0  ( RETAINER CONE   )       5 V!
+ 0000E0  ( INNER-ANALYZER  )       6 V!
+ 0000E0  ( OUTER-ANALYZER  )       7 V!
+ 0000E0  ( EXTRACTOR       )       8 V!
+ 0000E0  ( SUPPRESSOR      )       9 V!
+ 0000E0  ( SENSOR          )      10 V!
+-1000E0  (  GUN-ENERGY     )      11 V!
+ 0000E0  (  GUN-CURRENT    )      12 V!
+ 0000E0  ( FREE            )      13 V!
+ 0203E0  ( POLAR ANGLE     )      14 V! ;
+\                                                17:55 10-27-90
+: SET-OFFSETS ( --- ) \ THESE VALUES CORRESPOND TO SCALE
+  0E 1  OFFSET!        \ RETAINER CONE -- NOW OUTER ANALYZER
+  0E 2  OFFSET!        \
+  0E 3  OFFSET!
+ -1E 4  OFFSET!     \ BIPOLAR
+  0E 5  OFFSET!
+  0E 6  OFFSET!
+  0E 7  OFFSET!
+ 21E 8  OFFSET!     \ BIPOLAR
+  0E 9  OFFSET!
+  0E 10 OFFSET!
+  0E 11 OFFSET!
+  0E 12 OFFSET!
+  0E 13 OFFSET!
+;
+\                                                15:44 01-07-91
+DECIMAL     ( FORMERLY S 13 )
+: RMCLEAR \ RIGHT-MENU-CLEAR-CLEARS RIGHT SIDE OF SCREEN
+  0 FOREGROUND
+  480 0 DO
+    490 I 639 I LINE
+  LOOP
+  15 FOREGROUND
+;
+: HISTOCLEAR \ CLEARS PORTION OF SCREEN TAKEN BY HISTOGRAMS
+  0 FOREGROUND
+  480 256 DO
+    0 I 480 I LINE
+  LOOP
+  15 FOREGROUND
+;
+\                                                15:44 01-07-91
+
+: IMG-CLEAR \ CLEARS PORTION OF SCREEN TAKEN BY CCP IMAGE
+  0 FOREGROUND
+  256 0 DO
+    0 I 255 I LINE
+  LOOP
+  15 FOREGROUND
+;
+
+
+
+
+
+
+
+\                                                15:44 01-07-91
+DECIMAL
+: SCALE-ALL SCALE1 SCALE2 ;
+: SET-DEFAULTS SETDEF SCALE-ALL SET-OFFSETS ;
+
+: CLRSTK ( DROP UNDETERMINED GARBAGE FROM THE STACK )
+  DEPTH DUP 0=
+  IF DROP ELSE 0 DO DROP LOOP THEN
+;
+: LCLEAR \ CLEARS LEFT SIDE OF SCREEN W/O MENU
+  0 FOREGROUND
+  480 0 DO
+    0 I 480 I LINE
+  LOOP
+  15 FOREGROUND
+;
+\                                                22:04 12-03-90
+: RIGHT-MENU1 ( --- ) RMCLEAR
+62 0 GOTOXY  ."  # Electrode  Volt"
+62 1 GOTOXY  ."  1 Upper inj+ "
+62 2 GOTOXY  ."  2 Lower def+ "
+62 3 GOTOXY  ."  3 FIX      + "
+62 4 GOTOXY  ."  4 Lower inj+ "
+62 5 GOTOXY  ."  5 Upper def+ "
+62 6 GOTOXY  ."  6 Innr anlz+ "
+62 7 GOTOXY  ."  7 Ret con +- "
+62 8 GOTOXY  ."  8 Suppressr- "
+62 9 GOTOXY  ."  9 Outranlz+- "
+62 10 GOTOXY ."  A Extractor+ "
+62 11 GOTOXY ."  B Gun energ- "
+62 12 GOTOXY ."  C Gun currn- "
+62 13 GOTOXY ."  D Free chnnl "
+\                                                16:15 01-21-91
+62 14 GOTOXY ."  E Elvation" ;
+: RIGHT-MENU2
+62 15 GOTOXY ."  <J K> X Shift"
+62 16 GOTOXY ."  <I M> Y Shift"
+62 17 GOTOXY ."  L Load case"
+62 18 GOTOXY ."  S Save case"
+62 19 GOTOXY ."  G Shftr tggle"
+62 20 GOTOXY ."  R Raster cntl"
+62 21 GOTOXY ."  T PID toggle "
+62 22 GOTOXY ."  P CCP control"
+62 23 GOTOXY ."  H Histogram menu "
+62 24 GOTOXY ."  O Blind tests    "
+62 25 GOTOXY ."  U Smart searches "
+62 26 GOTOXY ."  X DO-IT-ALL" ;
+
+\                                                16:11 01-21-91
+: DISP-VALUES ( --- ) \ DISPLAYS ALL NON-TRODE VALUES FOR MENU
+  75 15 GOTOXY XX @ 5 .R                 \ DISPLAY X SHIFT
+  75 16 GOTOXY YY @ 5 .R                 \ DISPLAY Y SHIFT
+  REVERSE
+  76 19 GOTOXY SHIFT-COMP @ IF ." COMP" ELSE ."  STD" THEN
+\ COMPENSATED OR STANDARD SHIFT PERFORMED
+  77 20 GOTOXY RASTER-ON @ IF ."  ON" ELSE ." OFF" THEN
+  77 21 GOTOXY PID-ACTIVE? @ IF ."  ON" ELSE ." OFF" THEN
+  REVERSE
+;
+
+
+: RIGHT-MENU RIGHT-MENU1 RIGHT-MENU2 ;
+
+
+\                                                15:46 01-07-91
+       : SETUP ( --- ) \ SETS GRAPHICS MODE FOR PROGRAM
+  640X480 16COLOR VMODE  \ PLOTS HITS WITH PINK
+  13 FOREGROUND
+;
+: MENU
+  0 BACKGROUND           \ BLACK BACKGROUND
+  487 0 487 479   LINE   \ PLOTS BOX AROUND MENU
+  487 479 639 479 LINE
+  639 479 639 0   LINE
+  639 0 487 0     LINE
+  RIGHT-MENU DISP-VALUES ;
+
+
+
+
+\                                                16:19 11-19-90
+: HELLO ( SYSTEM HELLO MESSAGE )
+CLS L L L L L
+."          UCSD CASS ELECTRON DRIFT INSTRUMENT TEST SYSTEM"
+L L L
+L L L L L BLINK
+."                  MAKE SURE CAPS LOCK IS ON !"
+L L L L L L L L L L -BLINK
+
+."                     STANDBY... SETTING UP "
+;
+
+
+
+
+
