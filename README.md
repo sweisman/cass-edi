@@ -1,24 +1,8 @@
 # cass-edi
 ## UCSD Center for Astrophysics and Space Sciences - Electron Drift Instrument - Test Harness - Forth
 
-The source comments refer to the [IBM PC AT Technical Reference Manual](https://minuszerodegrees.net/manuals/IBM_5170_Technical_Reference_6280070_SEP85.pdf)
-and Lewis Eggebrecht's [Interfacing to the IBM Personal Computer](https://www.amazon.com/Interfacing-Personal-Computer-Lewis-Eggebrecht/dp/067222027X).
-Even though the latter only covered 8-bit computers, it was essential for details lacking in the official 16-bit documentation. As I described in my Amazon review:
-
-```
-The old 8088 systems even then were long in the tooth. Yet, this book was absolutely indispensable when writing 32 bit DMA device drivers. There were legacy quirks that only this book explained correctly. If you are responsible for code written for the ISA architecture, regardless of CPU generation, this book was and is a must.
-```
-
-The initial file to load is `OPTICS26.SCR`, which loads all other files. From what I remember, the `26` referred to the 26 screens of source code when I took over development.
-By the time I left, a little over a year later, there were over 250 screens, all of which I wrote.
-Some screens mention mention other names, which included the professor overseeing the project, my boss, and a former member of the team. Still, I wrote 90% of the code. The rest was written by my boss.
-
-Each screen in Forth is 1024 bytes, formatted as 64x16 in text. Each screen included a header line as a comment.
-I reformatted the raw screens to be compatible with regular text editors using this Perl one-liner applied to each file:
-
-`perl -pe 's/(.{64})/$1\n/g' OPTICS26.SCR > optics26.scr`
-
-Then the trailing spaces of each line were stripped. The code otherwise is as it was when I left.
+This is the code to control the hardware test harness to validate the Electron Drift Instrument.
+It is a significant program written in 32-bit Forth that does everything from low-level hardware control to complex graphical display and keyboard-driven user interaction.
 
 The test harness was composed of the following.
 
@@ -35,11 +19,22 @@ There was code to:
 3. Record the output of the guns onto the Channel Plate as they exited the device.
 4. Perform detailed analysis of the output.
 5. Define and execute test plans, iterating over them, and logging results.
-6. A GUI to present all this graphically and provide user interaction.
+6. A GUI to present all this graphically and provide keyboard-driven user interaction.
 
 It was written in a 32-bit variant of LMI FORTH using a DOS Extender.
 
 I was told at the time that because of my work I would be named as one of the contributors to the article published as a result of the project. Being that I left years before that happened, my name was sadly omitted.
+
+The initial file to load is `OPTICS26.SCR`, which loads all other files. From what I remember, the `26` referred to the 26 screens of source code when I took over development. The number was not interated further.
+By the time I left, a little over a year later, there were over 250 screens, all of which I wrote.
+Some screens mention other names, which included the professor overseeing the project, my boss, and a former member of the team. Still, I wrote 90% of the code. The rest was written by my boss.
+
+Each screen in Forth is 1024 bytes, formatted as 64x16 in text. Each screen included a header line as a comment.
+I reformatted the raw screens to be compatible with regular text editors using this Perl one-liner applied to each file:
+
+`perl -pe 's/(.{64})/$1\n/g' OPTICS26.SCR > optics26.scr`
+
+Then the trailing spaces of each line were stripped. The code otherwise is as it was when I left.
 
 Here is the order of loading, along with brief descriptions of the contents of each, as run from `optics26.scr`:
 
@@ -62,6 +57,14 @@ INCLUDE USERIN26.SCR  \ IMPLEMENTS MAIN USER INPUT ROUTINE
 ```
 
 Below are various comments excerpted from the code that I wrote at the time describing some of the complex functionality of the test harness and data capture and analysis being done.
+
+There are various references to the [IBM PC AT Technical Reference Manual](https://minuszerodegrees.net/manuals/IBM_5170_Technical_Reference_6280070_SEP85.pdf)
+and Lewis Eggebrecht's [Interfacing to the IBM Personal Computer](https://www.amazon.com/Interfacing-Personal-Computer-Lewis-Eggebrecht/dp/067222027X).
+Even though the latter only covered 8-bit computers, it was essential reading for details lacking in the official 16-bit documentation. As I described in my Amazon review:
+
+```
+The old 8088 systems even then were long in the tooth. Yet, this book was absolutely indispensable when writing 32 bit DMA device drivers. There were legacy quirks that only this book explained correctly. If you are responsible for code written for the ISA architecture, regardless of CPU generation, this book was and is a must.
+```
 
 ### PID for stepper motor:
 
