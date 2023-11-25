@@ -1,0 +1,5 @@
+**/*.scr linguist-language=Forth
+**/*.scr linguist-vendored=false
+**/*.scr linguist-generated=false
+**/*.scr linguist-documentation=false
+**/*.scr linguist-detectable=true
