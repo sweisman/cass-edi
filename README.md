@@ -2,7 +2,7 @@
 ## UCSD Center for Astrophysics and Space Sciences - Electron Drift Instrument - Test Harness - Forth
 
 This is the code to control the hardware test harness to validate the Electron Drift Instrument.
-It is a significant program written in 32-bit Forth that does everything from low-level hardware control to complex graphical display and keyboard-driven user interaction.
+It is a significant program written in a 32-bit variant of LMI FORTH using a DOS Extender that does everything from low-level hardware control to complex data analysis to graphical display and keyboard-driven user interaction.
 
 The test harness was composed of the following.
 
@@ -20,8 +20,6 @@ There was code to:
 4. Perform detailed analysis of the output.
 5. Define and execute test plans, iterating over them, and logging results.
 6. A GUI to present all this graphically and provide keyboard-driven user interaction.
-
-It was written in a 32-bit variant of LMI FORTH using a DOS Extender.
 
 I was told at the time that because of my work I would be named as one of the contributors to the article published as a result of the project. Being that I left years before that happened, my name was sadly omitted.
 
