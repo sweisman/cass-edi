@@ -1,7 +1,48 @@
 # cass-edi
-UCSD Center for Astrophysics and Space Sciences - Electron Drift Instrument - Test Harness - Forth
+## UCSD Center for Astrophysics and Space Sciences - Electron Drift Instrument - Test Harness - Forth
 
-optics26.scr
+The source comments refer to the [IBM PC AT Technical Reference Manual](https://minuszerodegrees.net/manuals/IBM_5170_Technical_Reference_6280070_SEP85.pdf)
+and Lewis Eggebrecht's [Interfacing to the IBM Personal Computer](https://www.amazon.com/Interfacing-Personal-Computer-Lewis-Eggebrecht/dp/067222027X).
+Even though the latter only covered 8-bit computers, it was essential for details lacking in the official 16-bit documentation. As I described in my Amazon review:
+
+```
+The old 8088 systems even then were long in the tooth. Yet, this book was absolutely indispensable when writing 32 bit DMA device drivers. There were legacy quirks that only this book explained correctly. If you are responsible for code written for the ISA architecture, regardless of CPU generation, this book was and is a must.
+```
+
+The initial file to load is `OPTICS26.SCR`, which loads all other files. From what I remember, the `26` referred to the 26 screens of source code when I took over development.
+By the time I left, a little over a year later, there were over 250 screens, all of which I wrote.
+Some screens mention mention other names, which included the professor overseeing the project, my boss, and a former member of the team. Still, I wrote 90% of the code. The rest was written by my boss.
+
+Each screen in Forth is 1024 bytes, formatted as 64x16 in text. Each screen included a header line as a comment.
+I reformatted the raw screens to be compatible with regular text editors using this Perl one-liner applied to each file:
+
+`perl -pe 's/(.{64})/$1\n/g' OPTICS26.SCR > optics26.scr`
+
+Then the trailing spaces of each line were stripped. The code otherwise is as it was when I left.
+
+The test harness was composed of the following.
+
+1. 14 electron guns controlled by Burr-Brown DACs.
+2. A stepper motor to position the instrument.
+3. The instrument, sometimes referred to as the `MARKIII DETECTOR` in comments.
+4. A 256x256 Channel Plate (64K pixels) device to record output. This is the same technology used in later generation night vision devices. It was *very* expensive hardware at the time. It came with some manuals and nothing else.
+5. A 16MHz 80386 PC with 8MB RAM
+
+There was code to:
+
+1. Modulate the output of the electron guns.
+2. Move the motor using a PID algorithm to position the instrument.
+3. Record the output of the guns onto the Channel Plate as they exited the device.
+4. Perform detailed analysis of the output.
+5. Define and execute test plans, iterating over them, and logging results.
+6. A GUI to present all this graphically and provide user interaction.
+
+It was written in a 32-bit variant of LMI FORTH using a DOS Extender.
+
+I was told at the time that because of my work I would be named as one of the contributors to the article published as a result of the project. Being that I left years before that happened, my name was sadly omitted.
+
+Here is the order of loading, along with brief descriptions of the contents of each, as run from `optics26.scr`:
+
 ```
 INCLUDE SYSVAR26.SCR  \ INIT VARS,SYS DEFS ETC/FORMERLY INIT
 INCLUDE ROUTIN26.SCR  \ COMMONLY USED LOW-LEVEL ROUTINES
@@ -20,23 +61,17 @@ INCLUDE SEARCH26.SCR  \ OPTIMIZED MULTI-MODE SEARCHES
 INCLUDE USERIN26.SCR  \ IMPLEMENTS MAIN USER INPUT ROUTINE
 ```
 
+Below are various comments excerpted from the code that I wrote at the time describing some of the complex functionality of the test harness and data capture and analysis being done.
+
+### PID for stepper motor:
+
 ```
-\ THIS FILE HAS SUPPORT FOR MULTI-VARIABLE AUTOMATED BLIND
-\ TESTS FOR VOLTAGE VALUES.  ONE TEST CAN BE PERFORMED AT A
-\ TIME ITERATING THROUGH UP TO 14 DIMENSIONS (CHANNELS).  THE
-\ RESULTS ARE THEN OUTPUT TO A FILE AND OPTIONALLY TO THE
-\ PRINTER.  THE PARAMETERS ARE SPECIFIED THROUGH 4 PARAMETERS,
-\ NAMELY MIDPOINT, +/-RANGE, INCREMENT, AND CHANNEL.  THIS
-\ ALLOWS THE CHANNELS TO CHANGED IN ANY ORDER, AND PERMITS
-\ INTUITIVE SPECIFICATIONS.  ONE EXCEPTION IS THAT ANGLE
-\ ELEVATION MUST BE THE OUTER LOOP SINCE IT IS TREATED
-\ DIFFERENTLY THAN OTHER CHANNELS.  WHEN FINISHED WITH THE TEST
-\ THE PROGRAM RETURNS TO THE SUBMENU.
-\ THE CORE OF THE ROUTINE IS THE AUTO-LOOP CONTRSUCT, WHICH
-\ HAS AN OUTER GENERAL PART THAT CAN HANDLE ANGLE LOOPS, AND
-\ THE MORE SPECIALIZED INNER-LOOPS THAT CAN ONLY LOOP OVER
-\ ELECTRODES.
+A FLOATING POINT IMPLEMENTATION OF A MODIFIED
+PID ALGORITHM FOR MOTOR CONTROL.  USED TO CONTROL
+ROTATION OF THE MARKIII DETECTOR ABOUT A POLAR AXIS
 ```
+
+### 16-bit DMA transfers and moving data from 16-bit real to 32-bit protected mode memory:
 
 ```
 \ THIS ROUTINE USES AT DMA CH#7, ALSO CALLED 16 BIT CH#3 IN THE
@@ -56,6 +91,28 @@ INCLUDE USERIN26.SCR  \ IMPLEMENTS MAIN USER INPUT ROUTINE
 \ AT MANUAL.  STUDY WHAT IS DONE CAREFULLY BEFORE CHANGES,
 \ SINCE THE DMA ROUTINES WORK AND ARE STABLE!
 ```
+
+### Test protocols:
+
+```
+\ THIS FILE HAS SUPPORT FOR MULTI-VARIABLE AUTOMATED BLIND
+\ TESTS FOR VOLTAGE VALUES.  ONE TEST CAN BE PERFORMED AT A
+\ TIME ITERATING THROUGH UP TO 14 DIMENSIONS (CHANNELS).  THE
+\ RESULTS ARE THEN OUTPUT TO A FILE AND OPTIONALLY TO THE
+\ PRINTER.  THE PARAMETERS ARE SPECIFIED THROUGH 4 PARAMETERS,
+\ NAMELY MIDPOINT, +/-RANGE, INCREMENT, AND CHANNEL.  THIS
+\ ALLOWS THE CHANNELS TO CHANGED IN ANY ORDER, AND PERMITS
+\ INTUITIVE SPECIFICATIONS.  ONE EXCEPTION IS THAT ANGLE
+\ ELEVATION MUST BE THE OUTER LOOP SINCE IT IS TREATED
+\ DIFFERENTLY THAN OTHER CHANNELS.  WHEN FINISHED WITH THE TEST
+\ THE PROGRAM RETURNS TO THE SUBMENU.
+\ THE CORE OF THE ROUTINE IS THE AUTO-LOOP CONTRSUCT, WHICH
+\ HAS AN OUTER GENERAL PART THAT CAN HANDLE ANGLE LOOPS, AND
+\ THE MORE SPECIALIZED INNER-LOOPS THAT CAN ONLY LOOP OVER
+\ ELECTRODES.
+```
+
+### Analytics:
 
 ```
 \ THIS FILE HAS ROUTINES TO PERFORM HISTOGRAMS ON DETECTOR
@@ -138,10 +195,4 @@ INCLUDE USERIN26.SCR  \ IMPLEMENTS MAIN USER INPUT ROUTINE
 \ THE POINT THAT IS JUST _LESS_ THAN HALF THE PEAK.  THEN IT
 \ TAKES ABS(LEFT-RIGHT) AND MULTS. BY BIN-WIDTH TO GET THE
 \ AZIMUTHAL ACCEPTANCE WIDTH
-```
-
-```
-A FLOATING POINT IMPLEMENTATION OF A MODIFIED
-PID ALGORITHM FOR MOTOR CONTROL.  USED TO CONTROL
-ROTATION OF THE MARKIII DETECTOR ABOUT A POLAR AXIS
 ```
