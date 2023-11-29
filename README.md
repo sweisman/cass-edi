@@ -25,7 +25,7 @@ I was told at the time that because of my work I would be named as one of the co
 
 The initial file to load is `OPTICS26.SCR`, which loads all other files. From what I remember, the `26` referred to the 26 screens of source code when I took over development. The number was not interated further.
 By the time I left, a little over a year later, there were over 250 screens, all of which I wrote.
-Some screens mention other names, which included the professor overseeing the project, my boss, and a former member of the team. Still, I wrote 90% of the code. The rest was written by my boss.
+Some screens mention other names, which included the professor overseeing the project, his PhD candidate student (my direct boss), and a former member of the team. Still, I wrote 90% of the code. The rest was written by my boss.
 
 Each screen in Forth is 1024 bytes, formatted as 64x16 in text. Each screen included a header line as a comment.
 I reformatted the raw screens to be compatible with regular text editors using this Perl one-liner applied to each file:
