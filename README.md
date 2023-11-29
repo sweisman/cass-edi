@@ -1,7 +1,7 @@
 # cass-edi
 ## UCSD Center for Astrophysics and Space Sciences - Electron Drift Instrument - Test Harness - Forth
 
-This is the code to control the hardware test harness to validate the Electron Drift Instrument.
+This is the code to control the hardware test harness to validate the Electron Drift Instrument, which was later launched on the Space Shuttle.
 It is a significant program written in a 32-bit variant of LMI FORTH using a DOS Extender that does everything from low-level hardware control to complex data analysis to graphical display and keyboard-driven user interaction.
 
 The test harness was composed of the following.
