@@ -16,7 +16,7 @@ There was code to:
 
 1. Modulate the output of the electron guns.
 2. Move the motor using a PID algorithm to position the instrument.
-3. Record the output of the guns onto the Channel Plate as they exited the device.
+3. Record the output of the guns onto the Channel Plate as the beams exited the device.
 4. Perform detailed analysis of the output.
 5. Define and execute test plans, iterating over them, and logging results.
 6. A GUI to present all this graphically and provide keyboard-driven user interaction.
