@@ -23,7 +23,7 @@ There was code to:
 
 I was told at the time that because of my work I would be named as one of the contributors to the article published as a result of the project. Being that I left years before that happened, my name was sadly omitted.
 
-The initial file to load is `OPTICS26.SCR`, which loads all other files. From what I remember, the `26` referred to the 26 screens of source code when I took over development. The number was not interated further.
+The initial file to load is `OPTICS26.SCR`, which loads all other files. From what I remember, the `26` referred to the 26 screens of source code when I took over development. The number was not iterated further.
 By the time I left, a little over a year later, there were over 250 screens, all of which I wrote.
 Some screens mention other names, which included the professor overseeing the project, his PhD candidate student (my direct boss), and a former member of the team. Still, I wrote 90% of the code. The rest was written by my boss.
 
